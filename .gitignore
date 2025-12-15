@@ -1,0 +1,12 @@
+# Large MODFLOW output files (exceed GitHub 100MB limit)
+workspace/modflow_2d_high/
+workspace/modflow_2d_low/
+workspace/modflow_2d_medium/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
