@@ -1,234 +1,190 @@
-# Reference Documentation
+# BHE Groundwater Flow Impact Modeling Literature Review
+
+## Project Overview
+
+This project provides a comparative analysis of **POINT2 analytical solution** and **MODFLOW numerical solution** for simulating the impact of groundwater flow on Borehole Heat Exchangers (BHE). Both methods effectively capture the effect of groundwater velocity on thermal response.
 
 ---
 
-## Methods Overview
+## 1. Core Theoretical Foundations
 
-This project compares three BHE (Borehole Heat Exchanger) temperature simulation methods:
+### 1.1 Heat Transfer Theory
 
-| Method | Type | Theoretical Basis | Developer/Source |
-|--------|------|-------------------|------------------|
-| **EED** | Commercial software | g-function (Eskilson 1987) | BLOCON (Sweden) |
-| **pygfunction** | Open-source Python library | g-function (Eskilson 1987) | Massimo Cimmino (Canada) |
-| **MODFLOW 6 GWE** | Open-source numerical simulation | Finite Difference Method (3D) | USGS (USA) |
+1. **Carslaw, H.S., & Jaeger, J.C. (1959)**
+   - *Conduction of Heat in Solids* (Second Edition)
+   - Oxford University Press
+   - **Contribution**: Fundamental heat conduction theory, including infinite line source and point source solutions
 
-### Relationship Between EED and pygfunction
+2. **Ingersoll, L.R., Zobel, O.J., & Ingersoll, A.C. (1954)**
+   - *Heat Conduction with Engineering, Geological, and Other Applications*
+   - McGraw-Hill
+   - **Contribution**: Heat conduction analysis methods for engineering applications
 
-**Important Notes**:
-- **EED** is commercial software requiring a license purchase
-- **pygfunction** is an independently developed open-source alternative (MIT License)
-- Both are based on the **same physical theory** (Eskilson's g-function method)
-- pygfunction is **NOT** released by BLOCON (the EED company)
-- Using pygfunction to implement g-function calculations is completely legal — the g-function theory is publicly available academic work
+### 1.2 Solute/Heat Transport Theory
 
-This project achieved nearly identical accuracy to EED using pygfunction (MAE = 0.15°C), validating the viability of the open-source approach.
-
----
-
-## Online Resources
-
-### pygfunction
-- **GitHub Repository**: https://github.com/MassimoCimmino/pygfunction
-- **Documentation**: https://pygfunction.readthedocs.io/
-- **PyPI**: https://pypi.org/project/pygfunction/
-- **DOI**: https://zenodo.org/badge/latestdoi/100305705
-- **Author**: Massimo Cimmino, Polytechnique Montréal, Canada
-
-### MODFLOW 6 GWE (Groundwater Energy Transport)
-- **USGS Official Documentation**: https://www.usgs.gov/software/modflow-6-usgs-modular-hydrologic-model
-- **GWE Module Guide**: https://modflow6.readthedocs.io/en/latest/
-- **FloPy (Python interface)**: https://github.com/modflowpy/flopy
-
-### EED (Earth Energy Designer)
-- **BLOCON Official Website**: https://buildingphysics.com/eed-2/
-- **Software Manual**: Available from BLOCON website with license
-- **Note**: Commercial software requiring license purchase
+3. **Wexler, E.J. (1992)**
+   - "Analytical Solutions for One-, Two-, and Three-Dimensional Solute Transport in Ground-Water Systems with Uniform Flow"
+   - *U.S. Geological Survey, Techniques of Water-Resources Investigations, Book 3, Chapter B7*
+   - https://pubs.usgs.gov/twri/twri3-b7/
+   - **Contribution**: Theoretical foundation for POINT2 analytical solution—analytical solution for point source solute transport in uniform flow fields
 
 ---
 
-## 1. Theoretical Basis of g-function Method
+## 2. Methodology Literature
 
-### 1.1 Core Concept
+### 2.1 POINT2 Analytical Solution Method
 
-The g-function is a dimensionless response function describing the long-term thermal response of borehole heat exchangers.
+4. **Bear, J. (1972)**
+   - *Dynamics of Fluids in Porous Media*
+   - American Elsevier
+   - **Contribution**: Fundamental theory of fluid dynamics in porous media
 
-**Basic Formula**:
-$$T_b(t) = T_0 + \frac{q}{2\pi k H} \cdot g\left(\frac{t}{t_s}, \frac{r_b}{H}, \frac{B}{H}\right)$$
+5. **Domenico, P.A., & Schwartz, F.W. (1990)**
+   - *Physical and Chemical Hydrogeology*
+   - John Wiley & Sons
+   - **Contribution**: Analogy method between solute and heat transport (heat-solute conversion principle)
 
-Where:
-- $T_b$ = Borehole wall temperature [°C]
-- $T_0$ = Undisturbed ground temperature [°C]
-- $q$ = Heat transfer rate per unit length [W/m]
-- $k$ = Ground thermal conductivity [W/(m·K)]
-- $H$ = Borehole depth [m]
-- $g$ = g-function value [-]
-- $t_s = H^2/(9\alpha)$ = Characteristic time [s]
-- $\alpha$ = Thermal diffusivity [m²/s]
+**Heat-Solute Analogy Principle**:
+| Solute Transport Parameter | Corresponding Heat Transport Parameter |
+|---------------------------|---------------------------------------|
+| Concentration C | Temperature change ΔT |
+| Diffusion coefficient D | Thermal diffusivity α |
+| Darcy velocity v | Darcy velocity × (ρw·cw)/(ρs·cs) |
+| Point source mass M | Point source heat Q / (ρs·cs) |
 
-**Fluid Temperature**:
-$$T_f(t) = T_b(t) + q \cdot R_b$$
+### 2.2 MODFLOW Numerical Method
 
-Where $R_b$ = Borehole thermal resistance [(m·K)/W]
+6. **Langevin, C.D., et al. (2017)**
+   - "Documentation for the MODFLOW 6 Groundwater Flow Model"
+   - *U.S. Geological Survey Techniques and Methods, Book 6, Chapter A55*
+   - https://doi.org/10.3133/tm6A55
+   - **Contribution**: MODFLOW 6 core flow model documentation
 
-### 1.2 Physical Significance of g-function
+7. **Hughes, J.D., et al. (2022)**
+   - "Documentation for the MODFLOW 6 Groundwater Energy Transport (GWE) Model"
+   - *U.S. Geological Survey Techniques and Methods, Book 6, Chapter A61*
+   - **Contribution**: Official documentation for GWE heat transport module
 
-The g-function accounts for:
-1. **Finite Line Source Effect** - Finite borehole depth
-2. **Constant Surface Boundary** - Image source method
-3. **Multi-borehole Thermal Interference** - Superposition between boreholes
-4. **Temporal Evolution** - Response from short-term to long-term (decades)
-
-### 1.3 Implementation Differences: EED vs pygfunction
-
-| Feature | EED | pygfunction |
-|---------|-----|-------------|
-| g-function calculation | Pre-computed tables + interpolation | Real-time numerical integration |
-| Borehole configuration | Predefined templates | Fully customizable |
-| Speed | Very fast (table lookup) | Slower (requires calculation) |
-| Flexibility | Limited | Highly flexible |
-| Accuracy | High | High (verifiable) |
-
----
-
-## 2. Key References
-
-### 2.1 Foundational Works on g-function Method
-
-1. **Eskilson, P. (1987)** ⭐ Core Reference
-   - "Thermal Analysis of Heat Extraction Boreholes"
-   - *PhD Thesis, Lund University, Sweden*
-   - **Contribution**: Established the g-function method, theoretical foundation for both EED and pygfunction
-   - **Note**: One of the most important works in BHE field
-
-2. **Claesson, J. & Eskilson, P. (1988)**
-   - "Conductive Heat Extraction to a Deep Borehole: Thermal Analyses and Dimensioning Rules"
-   - *Energy, Vol. 13, No. 6, pp. 509-527*
-   - **Contribution**: Refined analytical solution for single borehole
-
-3. **Hellström, G. (1991)**
-   - "Ground Heat Storage: Thermal Analyses of Duct Storage Systems"
-   - *PhD Thesis, Lund University, Sweden*
-   - **Contribution**: Developed multi-borehole system analysis and borehole thermal resistance theory
-
-### 2.2 pygfunction Related Publications
-
-4. **Cimmino, M. & Bernier, M. (2014)**
-   - "A semi-analytical method to generate g-functions for geothermal bore fields"
-   - *International Journal of Heat and Mass Transfer, Vol. 70, pp. 641-650*
-   - **Contribution**: Semi-analytical method used in pygfunction
-
-5. **Cimmino, M. (2018)**
-   - "Fast calculation of the g-functions of geothermal borehole fields using similarities in the evaluation of the finite line source solution"
-   - *Journal of Building Performance Simulation, Vol. 11, No. 6, pp. 655-668*
-   - **Contribution**: Fast g-function calculation algorithm
-
-6. **Cimmino, M. (2019)**
-   - "pygfunction 2.1: An open-source toolbox for the evaluation of thermal response factors for geothermal borehole fields"
-   - *MethodsX, Vol. 8, 101249*
-   - **Contribution**: Official documentation paper for pygfunction library
-
-### 2.3 Borehole Thermal Resistance Theory
-
-7. **Mogensen, P. (1983)**
-   - "Fluid to Duct Wall Heat Transfer in Duct System Heat Storages"
-   - *Proceedings of the International Conference on Subsurface Heat Storage*
-   - Stockholm, Sweden, pp. 652-657
-   - **Contribution**: First proposed borehole thermal resistance concept
-
-8. **Gehlin, S. (2002)**
-   - "Thermal Response Test: Method Development and Evaluation"
-   - *PhD Thesis, Luleå University of Technology, Sweden*
-   - **Online**: http://urn.kb.se/resolve?urn=urn:nbn:se:ltu:diva-18295
-   - **Contribution**: Systematic summary of TRT methods
-
-### 2.4 MODFLOW Related Publications
-
-9. **Langevin, C.D., et al. (2022)**
-   - "MODFLOW 6 Modular Hydrologic Model version 6.4.1"
+8. **Langevin, C.D., et al. (2024)**
+   - "MODFLOW 6 Groundwater Energy Transport (GWE) Model"
    - *U.S. Geological Survey Software Release*
-   - https://doi.org/10.5066/P9FL1JCC
+   - **Contribution**: Latest GWE module version, including ESL (Energy Source Loading) package
 
-10. **Hughes, J.D., et al. (2022)**
-    - "MODFLOW 6 Groundwater Energy Transport (GWE) Module"
-    - *U.S. Geological Survey Techniques and Methods, Book 6, Chapter A61*
-    - **Contribution**: Official documentation for GWE module
+### 2.3 g-function Method (No-Flow Scenarios)
 
-### 2.5 POINT2 Analytical Solution (Early Attempt)
+9. **Eskilson, P. (1987)**
+   - *Thermal Analysis of Heat Extraction Boreholes*
+   - PhD Thesis, University of Lund, Sweden
+   - **Contribution**: Foundational work on g-function method
 
-11. **Wexler, E.J. (1992)**
-    - "Analytical Solutions for One-, Two-, and Three-Dimensional Solute Transport in Ground-Water Systems with Uniform Flow"
-    - *U.S. Geological Survey, Techniques of Water-Resources Investigations, Book 3, Chapter B7*
-    - https://pubs.usgs.gov/twri/twri3-b7/
-    - **Note**: Early attempt in this project, abandoned due to 2D limitations
+10. **Cimmino, M., & Bernier, M. (2014)**
+    - "A semi-analytical method to generate g-functions for geothermal bore fields"
+    - *International Journal of Heat and Mass Transfer, 70, 641-650*
+    - **Contribution**: Improved semi-analytical g-function calculation method
+
+11. **Cimmino, M. (2018)**
+    - "pygfunction: an open-source toolbox for the evaluation of thermal response factors for geothermal borehole fields"
+    - *eSim 2018*
+    - **Contribution**: pygfunction open-source library, used in this project for no-flow scenario validation
 
 ---
 
 ## 3. Methodology Notes
 
-### 3.1 Why Was POINT2 Analytical Solution Abandoned?
+### 3.1 Applicability of POINT2 Analytical Solution
 
-We initially attempted using POINT2 (2D point source solute transport solution) for BHE simulation, but abandoned it:
+POINT2 analytical solution is based on Wexler (1992)'s 2D point source solute transport model, applied to BHE thermal response simulation through heat-solute analogy:
 
-| Issue | Explanation |
-|-------|-------------|
-| **2D Limitation** | Cannot handle vertical effects of 147m deep boreholes |
-| **No Boundary Effects** | Ignores "image effect" from constant surface temperature |
-| **Insufficient Accuracy** | Deviation from EED > 3°C |
+| Feature | Description |
+|---------|-------------|
+| **Dimension** | 2D (horizontal plane) |
+| **Flow Field** | Uniform horizontal groundwater flow |
+| **Source Term** | Point source (borehole resistance conversion) |
+| **Boundary** | Infinite domain |
 
-**Attempted Correction**: Geothermal gradient correction
-- Conclusion: Can only adjust temperature baseline, cannot correct response curve shape
-- Long-term (25 years) error remains > 30%
+**Borehole Resistance (R_b) Conversion**:
+- BHE exchanges heat with surrounding soil through borehole resistance R_b
+- POINT2 uses injection temperature: T_inj = Q × R_b / (2πH)
+- Where Q is heat load, H is borehole depth
 
-See: `docs/POINT2_ANALYSIS_EN.md`
+### 3.2 Advantages of MODFLOW Numerical Solution
 
-### 3.2 Why Does g-function Method Work?
+MODFLOW 6 GWE provides complete 3D heat transport numerical simulation:
 
-The g-function method (used by both EED and pygfunction) accounts for:
-1. ✓ Finite borehole depth (Finite Line Source, not point source)
-2. ✓ Constant surface temperature boundary (Image source method)
-3. ✓ Multi-borehole thermal interference (Response superposition)
-4. ✓ Long-term thermal evolution (Characteristic time scale)
+| Feature | Description |
+|---------|-------------|
+| **Dimension** | 3D |
+| **Flow Field** | Arbitrary non-uniform flow fields |
+| **Source Term** | ESL package (Energy Source Loading) |
+| **Boundary** | Flexible configuration |
+| **Grid** | Supports local refinement |
 
-These are exactly the 3D effects that POINT2 lacks.
+### 3.3 Method Comparison
 
-### 3.3 Advantages of MODFLOW Numerical Method
+This project validated the performance of multiple methods:
 
-Compared to analytical methods, MODFLOW 6 GWE provides:
-1. ✓ Full 3D simulation
-2. ✓ Arbitrary boundary conditions
-3. ✓ Extensible to groundwater flow scenarios
-4. ✓ Local grid refinement technique
+| Method | Applicable Scenario | Computational Efficiency | Accuracy vs EED |
+|--------|--------------------|-----------------------|-----------------|
+| **pygfunction** | No-flow scenarios (EED alternative) | Fast (<1 sec) | MAE = 0.15°C, R² = 0.999 |
+| **POINT2** | Uniform flow, quick assessment | Fast (~1 min) | MAE = 0.14-1.13°C |
+| **MODFLOW** | Complex 3D scenarios with flow | Slower (~35-47 min) | MAE = 0.19-1.28°C |
+
+### 3.4 pygfunction as EED Alternative
+
+pygfunction provides an open-source alternative to commercial EED software:
+
+| Feature | Comparison |
+|---------|------------|
+| **Theoretical basis** | Same g-function method as EED |
+| **Accuracy** | MAE = 0.15°C compared to EED |
+| **Advantages** | Open-source, scriptable, cross-platform |
+| **Limitations** | No GUI, requires Python, no groundwater flow |
+| **Use case** | Research, optimization workflows, reproducible analysis |
 
 ---
 
-## 4. Project Contributions
+## 4. Key Project Findings
 
-### 4.1 Validation Results
+### 4.1 Effect of Groundwater Velocity on Thermal Response
 
-| Method | MAE vs EED | Conclusion |
-|--------|------------|------------|
-| pygfunction | 0.15°C | ✓ Can replace EED commercial software |
-| MODFLOW (local refinement) | 0.084°C | ✓ Accuracy exceeds analytical methods |
-| POINT2 + correction | > 3°C | ✗ Not suitable for BHE |
+Through comparative analysis of three velocity scenarios:
 
-### 4.2 Practical Significance
+| Scenario | v (m/d) | Advection Effect | Temperature Amplitude Change |
+|----------|---------|-----------------|----------------------------|
+| LOW | 0.001 | Negligible | Maximum (close to no-flow) |
+| MEDIUM | 0.1 | Significant | Moderate attenuation |
+| HIGH | 1.0 | Dominant | Significant attenuation |
 
-1. **Open-source Alternative**: pygfunction can replace EED for g-function calculations
-2. **Numerical Validation**: MODFLOW provides independent numerical verification
-3. **Methodology**: Clarified limitations of 2D analytical solutions
+**Key Findings**: 
+- Both methods correctly predict: higher velocity → smaller temperature amplitude
+- Physical explanation: groundwater flow carries heat away, reducing local temperature accumulation
+
+### 4.2 Method Consistency Validation
+
+| Metric | POINT2 vs MODFLOW |
+|--------|-------------------|
+| Temperature trend | Fully consistent |
+| Phase relationship | Basically consistent (difference <1 month) |
+| Absolute values | Difference 1-3°C (acceptable) |
 
 ---
 
 ## 5. Recommended Reading Order
 
-For readers wanting to deeply understand BHE modeling:
+### 5.1 Groundwater Flow Impact Analysis
 
-1. **Introduction**: Gehlin (2002) - TRT method overview
-2. **Core Theory**: Eskilson (1987) - g-function principles
-3. **Implementation Details**: Cimmino (2018, 2019) - pygfunction algorithms
-4. **Numerical Methods**: Hughes et al. (2022) - MODFLOW GWE
+1. **Introduction**: Wexler (1992) - Solute transport analytical solution fundamentals
+2. **Theory**: Bear (1972) - Fluid dynamics in porous media
+3. **Numerical Methods**: Hughes et al. (2022) - MODFLOW GWE module
+4. **Project Report**: `docs/COMPREHENSIVE_COMPARISON_EN.md`
+
+### 5.2 No-Flow Scenarios (Supplementary)
+
+1. **g-function Theory**: Eskilson (1987)
+2. **Open-source Implementation**: Cimmino (2018) - pygfunction
+3. **Project Validation**: `code/pygfunction_final.ipynb`
 
 ---
 
 *Last Updated: December 2025*
-*Author: AGT Intern Project*
+*Author: Liuhuang Luo, AGT Intern Project*

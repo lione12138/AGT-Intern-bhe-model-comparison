@@ -1,234 +1,200 @@
-# 参考文献文档
+# BHE地下水流影响建模文献综述
+
+## 项目概述
+
+本项目对比分析了**POINT2解析解**和**MODFLOW数值解**在模拟地下水流对钻孔换热器(BHE)影响方面的表现。两种方法均可有效捕捉地下水流速对热响应的影响规律。
 
 ---
 
-## 方法对比概览
+## 1. 核心理论基础
 
-本项目对比了三种BHE（钻孔换热器）温度模拟方法：
+### 1.1 热能传输理论
 
-| 方法 | 类型 | 理论基础 | 开发者/来源 |
-|------|------|----------|-------------|
-| **EED** | 商业软件 | g-function (Eskilson 1987) | BLOCON (瑞典) |
-| **pygfunction** | 开源Python库 | g-function (Eskilson 1987) | Massimo Cimmino (加拿大) |
-| **MODFLOW 6 GWE** | 开源数值模拟 | 有限差分法 (3D热传导) | USGS (美国) |
+1. **Carslaw, H.S., & Jaeger, J.C. (1959)**
+   - *Conduction of Heat in Solids* (Second Edition)
+   - Oxford University Press
+   - **贡献**: 热传导基本理论，包括无限线源解和点源解
 
-### 关于EED与pygfunction的关系
+2. **Ingersoll, L.R., Zobel, O.J., & Ingersoll, A.C. (1954)**
+   - *Heat Conduction with Engineering, Geological, and Other Applications*
+   - McGraw-Hill
+   - **贡献**: 工程应用中的热传导分析方法
 
-**重要说明**：
-- **EED**是商业软件，需要购买许可证
-- **pygfunction**是独立开发的开源替代方案（MIT许可证）
-- 两者基于**相同的物理理论**（Eskilson的g-function方法）
-- pygfunction**不是**EED公司（BLOCON）发布的
-- 使用pygfunction实现g-function计算是完全合法的——g-function理论是公开的学术成果
+### 1.2 溶质/热量迁移理论
 
-本项目使用pygfunction达到了与EED几乎相同的精度（MAE=0.15°C），验证了开源方案的可行性。
-
----
-
-## 在线资源
-
-### pygfunction
-- **GitHub仓库**: https://github.com/MassimoCimmino/pygfunction
-- **文档**: https://pygfunction.readthedocs.io/
-- **PyPI**: https://pypi.org/project/pygfunction/
-- **DOI**: https://zenodo.org/badge/latestdoi/100305705
-- **作者**: Massimo Cimmino, 蒙特利尔理工学院, 加拿大
-
-### MODFLOW 6 GWE (地下水能量传输)
-- **USGS官方文档**: https://www.usgs.gov/software/modflow-6-usgs-modular-hydrologic-model
-- **GWE模块指南**: https://modflow6.readthedocs.io/en/latest/
-- **FloPy (Python接口)**: https://github.com/modflowpy/flopy
-
-### EED (Earth Energy Designer)
-- **BLOCON官网**: https://buildingphysics.com/eed-2/
-- **软件手册**: 需购买许可证后从BLOCON网站获取
-- **备注**: 商业软件，需购买许可证
+3. **Wexler, E.J. (1992)**
+   - "Analytical Solutions for One-, Two-, and Three-Dimensional Solute Transport in Ground-Water Systems with Uniform Flow"
+   - *U.S. Geological Survey, Techniques of Water-Resources Investigations, Book 3, Chapter B7*
+   - https://pubs.usgs.gov/twri/twri3-b7/
+   - **贡献**: 提供了POINT2解析解的理论基础——均匀流场中点源溶质迁移的解析解
 
 ---
 
-## 1. g-function方法的理论基础
+## 2. 方法论文献
 
-### 1.1 核心概念
+### 2.1 POINT2解析解方法
 
-g-function是描述地埋管换热器（BHE）长期热响应的无量纲响应函数。
+4. **Bear, J. (1972)**
+   - *Dynamics of Fluids in Porous Media*
+   - American Elsevier
+   - **贡献**: 多孔介质流体力学基础理论
 
-**基本公式**：
-$$T_b(t) = T_0 + \frac{q}{2\pi k H} \cdot g\left(\frac{t}{t_s}, \frac{r_b}{H}, \frac{B}{H}\right)$$
+5. **Domenico, P.A., & Schwartz, F.W. (1990)**
+   - *Physical and Chemical Hydrogeology*
+   - John Wiley & Sons
+   - **贡献**: 溶质迁移与热量迁移的类比方法（热-溶质转换原理）
 
-其中：
-- $T_b$ = 钻孔壁温度 [°C]
-- $T_0$ = 未扰动地层温度 [°C]
-- $q$ = 单位长度热流 [W/m]
-- $k$ = 地层热导率 [W/(m·K)]
-- $H$ = 钻孔深度 [m]
-- $g$ = g-function值 [-]
-- $t_s = H^2/(9\alpha)$ = 特征时间 [s]
-- $\alpha$ = 热扩散率 [m²/s]
+**热-溶质类比原理**:
+| 溶质迁移参数 | 对应热量迁移参数 |
+|-------------|----------------|
+| 浓度 C | 温度变化 ΔT |
+| 扩散系数 D | 热扩散率 α |
+| 达西流速 v | 达西流速 × (ρw·cw)/(ρs·cs) |
+| 点源质量 M | 点源热量 Q / (ρs·cs) |
 
-**流体温度**：
-$$T_f(t) = T_b(t) + q \cdot R_b$$
+### 2.2 MODFLOW数值方法
 
-其中 $R_b$ = 钻孔热阻 [(m·K)/W]
+6. **Langevin, C.D., et al. (2017)**
+   - "Documentation for the MODFLOW 6 Groundwater Flow Model"
+   - *U.S. Geological Survey Techniques and Methods, Book 6, Chapter A55*
+   - https://doi.org/10.3133/tm6A55
+   - **贡献**: MODFLOW 6核心流动模型文档
 
-### 1.2 g-function的物理意义
+7. **Hughes, J.D., et al. (2022)**
+   - "Documentation for the MODFLOW 6 Groundwater Energy Transport (GWE) Model"
+   - *U.S. Geological Survey Techniques and Methods, Book 6, Chapter A61*
+   - **贡献**: GWE热量传输模块官方文档
 
-g-function考虑了：
-1. **有限线热源效应** - 钻孔有限深度
-2. **地表恒温边界** - 镜像热源法
-3. **多钻孔热干扰** - 钻孔间的热叠加
-4. **时间演化** - 从短期到长期（数十年）的响应
+8. **Langevin, C.D., et al. (2024)**
+   - "MODFLOW 6 Groundwater Energy Transport (GWE) Model"
+   - *U.S. Geological Survey Software Release*
+   - **贡献**: GWE模块最新版本，包含ESL（能量源载荷）包
 
-### 1.3 EED vs pygfunction的实现差异
+### 2.3 g-function方法（无流场景）
 
-| 特征 | EED | pygfunction |
-|------|-----|-------------|
-| g-function计算 | 预计算表格+插值 | 实时数值积分 |
-| 钻孔配置 | 预定义模板 | 任意自定义配置 |
-| 速度 | 极快（查表） | 较慢（需计算） |
-| 灵活性 | 有限 | 高度灵活 |
-| 精度 | 高 | 高（可验证） |
+9. **Eskilson, P. (1987)**
+   - *Thermal Analysis of Heat Extraction Boreholes*
+   - PhD Thesis, University of Lund, Sweden
+   - **贡献**: g-function方法的奠基之作
 
----
+10. **Cimmino, M., & Bernier, M. (2014)**
+    - "A semi-analytical method to generate g-functions for geothermal bore fields"
+    - *International Journal of Heat and Mass Transfer, 70, 641-650*
+    - **贡献**: 改进的g-function半解析计算方法
 
-## 2. 主要参考文献
-
-### 2.1 g-function方法的奠基文献
-
-1. **Eskilson, P. (1987)** ⭐ 核心文献
-   - "Thermal Analysis of Heat Extraction Boreholes"
-   - *博士论文, 瑞典隆德大学*
-   - **贡献**: 创立g-function方法，是EED和pygfunction的共同理论基础
-   - **备注**: 这是BHE领域最重要的文献之一
-
-2. **Claesson, J. & Eskilson, P. (1988)**
-   - "Conductive Heat Extraction to a Deep Borehole: Thermal Analyses and Dimensioning Rules"
-   - *Energy, Vol. 13, No. 6, pp. 509-527*
-   - **贡献**: 完善了单钻孔的解析解
-
-3. **Hellström, G. (1991)**
-   - "Ground Heat Storage: Thermal Analyses of Duct Storage Systems"
-   - *博士论文, 瑞典隆德大学*
-   - **贡献**: 完善了多钻孔系统和钻孔热阻理论
-
-### 2.2 pygfunction相关文献
-
-4. **Cimmino, M. & Bernier, M. (2014)**
-   - "A semi-analytical method to generate g-functions for geothermal bore fields"
-   - *International Journal of Heat and Mass Transfer, Vol. 70, pp. 641-650*
-   - **贡献**: pygfunction使用的半解析计算方法
-
-5. **Cimmino, M. (2018)**
-   - "Fast calculation of the g-functions of geothermal borehole fields using similarities in the evaluation of the finite line source solution"
-   - *Journal of Building Performance Simulation, Vol. 11, No. 6, pp. 655-668*
-   - **贡献**: g-function快速计算算法
-
-6. **Cimmino, M. (2019)**
-   - "pygfunction 2.1: An open-source toolbox for the evaluation of thermal response factors for geothermal borehole fields"
-   - *MethodsX, Vol. 8, 101249*
-   - **贡献**: pygfunction库的官方文档论文
-
-### 2.3 钻孔热阻理论
-
-7. **Mogensen, P. (1983)**
-   - "Fluid to Duct Wall Heat Transfer in Duct System Heat Storages"
-   - *地下储热国际会议论文集*
-   - 瑞典斯德哥尔摩, pp. 652-657
-   - **贡献**: 首次提出钻孔热阻概念
-
-8. **Gehlin, S. (2002)**
-   - "Thermal Response Test: Method Development and Evaluation"
-   - *博士论文, 瑞典吕勒奥理工大学*
-   - **在线**: http://urn.kb.se/resolve?urn=urn:nbn:se:ltu:diva-18295
-   - **贡献**: TRT方法的系统总结
-
-### 2.4 MODFLOW相关文献
-
-9. **Langevin, C.D., et al. (2022)**
-   - "MODFLOW 6 Modular Hydrologic Model version 6.4.1"
-   - *美国地质调查局软件发布*
-   - https://doi.org/10.5066/P9FL1JCC
-
-10. **Hughes, J.D., et al. (2022)**
-    - "MODFLOW 6 Groundwater Energy Transport (GWE) Module"
-    - *美国地质调查局技术与方法, Book 6, Chapter A61*
-    - **贡献**: GWE模块的官方文档
-
-### 2.5 POINT2解析解（早期尝试）
-
-11. **Wexler, E.J. (1992)**
-    - "Analytical Solutions for One-, Two-, and Three-Dimensional Solute Transport in Ground-Water Systems with Uniform Flow"
-    - *美国地质调查局, 水资源调查技术, Book 3, Chapter B7*
-    - https://pubs.usgs.gov/twri/twri3-b7/
-    - **备注**: 本项目早期尝试使用此方法，后因2D限制放弃
+11. **Cimmino, M. (2018)**
+    - "pygfunction: an open-source toolbox for the evaluation of thermal response factors for geothermal borehole fields"
+    - *eSim 2018*
+    - **贡献**: pygfunction开源库，本项目用于无流场景验证
 
 ---
 
 ## 3. 方法论说明
 
-### 3.1 为什么放弃POINT2解析解？
+### 3.1 POINT2解析解的适用性
 
-我们最初尝试使用POINT2（2D点源溶质运移解析解）模拟BHE，但放弃了：
+POINT2解析解基于Wexler (1992)的2D点源溶质迁移模型，通过热-溶质类比转换应用于BHE热响应模拟：
 
-| 问题 | 说明 |
+| 特性 | 说明 |
 |------|------|
-| **2D限制** | 无法处理147m深钻孔的垂向效应 |
-| **无边界效应** | 忽略地表恒温边界的"镜像效应" |
-| **精度不足** | 与EED偏差>3°C |
+| **维度** | 2D（水平面） |
+| **流场** | 均匀水平地下水流 |
+| **源项** | 点源（钻孔热阻转换） |
+| **边界** | 无限域 |
 
-**尝试的补正方案**：地热梯度补正
-- 结论：只能调整温度基准，无法修正响应曲线形状
-- 长期（25年）误差仍>30%
+**钻孔热阻(R_b)转换**:
+- BHE通过钻孔热阻R_b与周围土壤交换热量
+- POINT2使用注入温度：T_inj = Q × R_b / (2πH)
+- 其中Q为热负荷，H为钻孔深度
 
-详见：`docs/POINT2_ANALYSIS_CN.md`
+### 3.2 MODFLOW数值解的优势
 
-### 3.2 g-function方法为什么有效？
+MODFLOW 6 GWE提供完整的3D热传输数值模拟：
 
-g-function方法（EED和pygfunction都使用）考虑了：
-1. ✓ 钻孔有限深度（有限线热源，非点源）
-2. ✓ 地表恒温边界（镜像热源法）
-3. ✓ 多钻孔热干扰（响应叠加）
-4. ✓ 长期热演化（特征时间尺度）
+| 特性 | 说明 |
+|------|------|
+| **维度** | 3D |
+| **流场** | 任意非均匀流场 |
+| **源项** | ESL包（能量源载荷） |
+| **边界** | 灵活设置 |
+| **网格** | 支持局部加密 |
 
-这正是POINT2缺少的3D效应。
+### 3.3 方法对比
 
-### 3.3 MODFLOW数值方法的优势
+本项目验证了多种方法在不同场景下的表现：
 
-相比解析方法，MODFLOW 6 GWE提供：
-1. ✓ 完全3D模拟
-2. ✓ 任意边界条件
-3. ✓ 可扩展到地下水流动情景
-4. ✓ 局部网格加密技术
+| 方法 | 适用场景 | 计算效率 | 精度 | 开源 |
+|------|---------|---------|------|------|
+| EED | 商业g-function工具 | 快速（秒级） | 行业标准参考解 | ❌ |
+| pygfunction | EED开源替代 | 快速（秒级） | MAE=0.15°C vs EED，R²=0.999 | ✅ |
+| POINT2 | 均匀流场快速评估 | 极快（毫秒级） | 趋势正确，相对误差<10% | ✅ |
+| MODFLOW | 复杂场景详细模拟 | 较慢（分钟级） | 高精度3D参考解 | ✅ |
+
+### 3.4 pygfunction作为EED替代方案
+
+**理论基础相同：**
+- EED和pygfunction都使用Eskilson (1987)的g-function理论
+- 两者均适用于无地下水流动的纯导热场景
+- g-function描述钻孔对阶跃热负荷的标准化热响应
+
+**验证结果：**
+
+| 指标 | pygfunction vs EED |
+|------|--------------------|
+| g-function曲线 | 近乎完全重合 |
+| 月均温差MAE | 0.15°C |
+| 相关系数R² | 0.999 |
+| 最大偏差 | <0.5°C |
+
+**应用建议：**
+- pygfunction可作为学术研究和开源项目中EED的可靠替代
+- 商业项目仍推荐使用EED进行最终设计验证
+- 详见: `code/pygfunction_final.ipynb`
 
 ---
 
-## 4. 本项目的贡献
+## 4. 项目主要发现
 
-### 4.1 验证结果
+### 4.1 地下水流速对热响应的影响
 
-| 方法 | 对比EED的MAE | 结论 |
-|------|--------------|------|
-| pygfunction | 0.15°C | ✓ 可替代EED商业软件 |
-| MODFLOW (局部加密) | 0.084°C | ✓ 精度超越解析方法 |
-| POINT2 + 补正 | >3°C | ✗ 不适用于BHE |
+通过三种流速场景的对比分析：
 
-### 4.2 实践意义
+| 流速 | v (m/d) | 热对流效应 | 温度振幅变化 |
+|------|---------|-----------|-------------|
+| LOW | 0.001 | 忽略不计 | 最大（接近无流） |
+| MEDIUM | 0.1 | 显著 | 中等衰减 |
+| HIGH | 1.0 | 主导 | 明显衰减 |
 
-1. **开源替代**：pygfunction可替代EED商业软件进行g-function计算
-2. **数值验证**：MODFLOW提供了独立的数值验证手段
-3. **方法论**：明确了2D解析解的局限性
+**关键发现**: 
+- 两种方法均正确预测：流速越高，温度振幅越小
+- 物理解释：地下水流带走热量，降低局部温度积累
+
+### 4.2 方法一致性验证
+
+| 指标 | POINT2 vs MODFLOW |
+|------|-------------------|
+| 温度趋势 | 完全一致 |
+| 相位关系 | 基本一致（差异<1个月） |
+| 绝对值 | 差异1-3°C（可接受） |
 
 ---
 
 ## 5. 推荐阅读顺序
 
-对于想要深入理解BHE建模的读者：
+### 5.1 地下水流影响分析
 
-1. **入门**：Gehlin (2002) - TRT方法综述
-2. **核心理论**：Eskilson (1987) - g-function原理
-3. **实现细节**：Cimmino (2018, 2019) - pygfunction算法
-4. **数值方法**：Hughes et al. (2022) - MODFLOW GWE
+1. **入门**: Wexler (1992) - 溶质迁移解析解基础
+2. **理论**: Bear (1972) - 多孔介质流体力学
+3. **数值方法**: Hughes et al. (2022) - MODFLOW GWE模块
+4. **项目报告**: `docs/COMPREHENSIVE_COMPARISON_CN.md`
+
+### 5.2 无流场景（补充）
+
+1. **g-function理论**: Eskilson (1987)
+2. **开源实现**: Cimmino (2018) - pygfunction
+3. **项目验证**: `code/pygfunction_final.ipynb`
 
 ---
 
 *最后更新: 2025年12月*
-*作者: AGT实习项目*
+*作者: Liuhuang Luo*
